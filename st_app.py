@@ -14,15 +14,15 @@ sns.set_theme(style="whitegrid")
 def load_and_clean_data():
     df = pd.read_csv("./data/sof_survey_2025.csv")
 
-    df_clean = df.dropna(
-        subset=[
-            "ConvertedCompYearly",
-            "YearsCode",
-            "WorkExp",
-            "ToolCountWork",
-            "ToolCountPersonal",
-        ]
-    ).copy()
+    critical_cols = [
+        "ConvertedCompYearly",
+        "WorkExp",
+        "YearsCode",
+        "EdLevel",
+        "AISelect",
+        "ICorPM",
+    ]
+    df_clean = df.dropna(subset=critical_cols).copy()
 
     cols_to_filter = ["ConvertedCompYearly", "ToolCountWork", "ToolCountPersonal"]
     for col in cols_to_filter:
@@ -31,7 +31,10 @@ def load_and_clean_data():
         iqr = q3 - q1
         l = max(0, q1 - 1.5 * iqr)
         u = q3 + 1.5 * iqr
-        df_clean = df_clean[(df_clean[col] >= l) & (df_clean[col] <= u)]
+
+        df_clean = df_clean[
+            ((df_clean[col] >= l) & (df_clean[col] <= u)) | df_clean[col].isna()
+        ]
 
     df_clean["YearsCodeHobby"] = df_clean["YearsCode"] - df_clean["WorkExp"]
     df_clean["YearsCodeHobby"] = df_clean["YearsCodeHobby"].apply(
@@ -86,30 +89,28 @@ page_selection = st.sidebar.radio(
 )
 
 if page_selection == "Annotation and Description":
-    st.markdown("""
-    ### Annotation
-    This project will try to explore the global landscape of the software development industry using data from the 2025 Stack Overflow Developer Survey. The primary purpose of the project is to analyze the relationships between a developer's experience, education level, adoption of AI tools, and their annual compensation. This will be achieved by performing exploratory data analysis and statistical analysis.
-    
-    Project's team consisted of only one member: Eylkin Svyatoslav from group 252-1.
-    
-    ### Dataset Description
-    The subject area of the dataset is the technology and software development industry. The dataset is derived from the annual Stack Overflow Developer Survey, which captures responses from around 50k developers worldwide. The dataset contains numerous fields, including categorical fields (e.g., `EdLevel` for education, `AISelect` for AI usage stance, `ICorPM` for Individual Contributor vs. People Manager) and numerical fields (e.g., `ConvertedCompYearly` for USD salary, `WorkExp` for professional coding years, `YearsCode` for total coding years, `ToolsWork` for the number of distinct apps used at work, and `ToolsSide` for apps used on side projects).
-    
-    **Data Quality:** The dataset required some additional cleanup. There were missing values, especially in the compensation fields because many users, apparently, opt out of sharing their salary. There are extreme outliers in the salary and tools fields due to troll responses (e.g., $1,000,000,000 salaries) that must be filtered out using statistical methods.
-    """)
+    st.markdown("""## Annotation
+
+This project will try to explore the global landscape of the software development industry using data from the 2025 Stack Overflow Developer Survey. The primary purpose of the project is to analyze the relationships between a developer's experience, education level, adoption of AI tools, and their annual compensation. This will be achieved by performing exploratory data analysis and statistical analysis.
+
+Project's team consisted of only one member: Eylkin Svyatoslav from group 252-1.
+
+
+## Dataset Description
+
+The subject area of the dataset is the technology and software development industry. The dataset is derived from the annual [Stack Overflow Developer Survey](https://github.com/StackExchange/Survey/tree/main), which captures responses from around 50k developers worldwide. The dataset contains numerous fields, including categorical fields (e.g., `EdLevel` for education, `AISelect` for AI usage stance, `ICorPM` for Individual Contributor vs. People Manager) and numerical fields (e.g., `ConvertedCompYearly` for USD salary, `WorkExp` for professional coding years, `YearsCode` for total coding years, `ToolsWork` for the number of distinct apps used at work, and `ToolsSide` for apps used on side projects). 
+""")
 
 elif page_selection == "EDA":
-    st.markdown("""
-    ### EDA
-    To understand the distributions and basic relations between the key numerical fields: `ConvertedCompYearly`, `ToolCountWork`, `YearsCodeHobby`, `WorkExp`, were created some visualizations using four different plot types:
+    st.markdown("""## EDA
+To understand the distributions and basic relations between the key numerical fields: `ConvertedCompYearly`, `ToolCountWork`, `YearsCodeHobby`, `WorkExp`, were created some visualizations using four different plot types:
 
-    - **Histogram**: for `ConvertedCompYearly` to observe the distribution of global developer salaries (revealing a heavy right-skew).
-    - **Boxplot**: for `ToolCountWork` to visualize the spread, median, and variance of the number of distinct tools used at work, which also serves to visually verify our IQR outlier cleanup.
-    - **Scatter plot**: `YearsCodeHobby` vs `ConvertedCompYearly` to explore the variance and density of pre-professional coding experience and its initial lack of clear linear correlation with current salary.
-    - **Line plot**: `ConvertedCompYearly` over `WorkExp` to track the average salary trajectory and its confidence interval as professional experience increases over time.
+- **Histogram**: for `ConvertedCompYearly` to observe the distribution of global developer salaries (revealing a heavy right-skew).
+- **Boxplot**: for `ToolCountWork` to visualize the spread, median, and variance of the number of distinct tools used at work, which also serves to visually verify our IQR outlier cleanup.
+- **Scatter plot**: `YearsCodeHobby` vs `ConvertedCompYearly` to explore the variance and density of pre-professional coding experience and its initial lack of clear linear correlation with current salary.
+- **Line plot**: `ConvertedCompYearly` over `WorkExp` to track the average salary trajectory and its confidence interval as professional experience increases over time.
 
-    Additionally key indicators were calculated and analysed.
-    """)
+Additionally key indicators were calculated and analysed.""")
 
     num_columns = [
         "ConvertedCompYearly",
@@ -222,10 +223,12 @@ elif page_selection == "EDA":
     st.pyplot(fig7)
 
 elif page_selection == "Hypothesis 1":
-    st.markdown("""
-    ### Hypothesis 1
-    A common assumption is that AI makes developers more valuable. However, I hypothesize the opposite: **Refusing to use AI tools is currently associated with a statistically significant salary boost**. Furthermore, I hypothesize that this increase exists for **both** Individual Contributors and People Managers.
-    """)
+    st.markdown("""## Hypothesis 1
+
+A common assumption is that AI makes developers more valuable.
+* **Observation:** Observation 1 shows that median salaries visually appear higher for non-AI users across both Individual Contributors and People Managers.
+* **Null Hypothesis (H0):** There is no significant difference in the median annual compensation between daily AI users and non-users within a given role.
+* **Test Chosen:** Mann-Whitney U test. As shown by the initial Salary Histogram, compensation is heavily right-skewed (non-normal). Therefore, we use a non-parametric test to compare the distributions of two independent groups.""")
 
     ai_users = filtered_df[filtered_df["AISelect"] == "Yes, I use AI tools daily"]
     non_ai_users = filtered_df[filtered_df["AISelect"] == "No, and I don't plan to"]
@@ -236,6 +239,41 @@ elif page_selection == "Hypothesis 1":
     ic_non = non_ai_users[non_ai_users["ICorPM"] == "Individual contributor"][
         "ConvertedCompYearly"
     ].dropna()
+
+    st.write("Individual Contributors")
+    if len(ic_ai) > 0 and len(ic_non) > 0:
+        st.write(
+            f"Median Salary | Non-User: ${ic_non.median():,.0f} vs AI Daily: ${ic_ai.median():,.0f}"
+        )
+        stat_ic, p_ic = stats.mannwhitneyu(ic_non, ic_ai, alternative="greater")
+        st.write(f"p-value: {p_ic:.4e}")
+        if p_ic < 0.05:
+            st.write(
+                "Conclusion: Reject H0. Non-using ICs earn a statistically significant premium over AI-using ICs."
+            )
+        else:
+            st.write("Conclusion: Fail to reject H0.")
+
+    pm_ai = ai_users[ai_users["ICorPM"] == "People manager"][
+        "ConvertedCompYearly"
+    ].dropna()
+    pm_non = non_ai_users[non_ai_users["ICorPM"] == "People manager"][
+        "ConvertedCompYearly"
+    ].dropna()
+
+    st.write("People Managers")
+    if len(pm_ai) > 0 and len(pm_non) > 0:
+        st.write(
+            f"Median Salary | Non-User: ${pm_non.median():,.0f} vs AI Daily: ${pm_ai.median():,.0f}"
+        )
+        stat_pm, p_pm = stats.mannwhitneyu(pm_non, pm_ai, alternative="greater")
+        st.write(f"p-value: {p_pm:.4e}")
+        if p_pm < 0.05:
+            st.write(
+                "Conclusion: Reject H0. Non-using Managers earn a statistically significant premium over AI-using Managers."
+            )
+        else:
+            st.write("Conclusion: Fail to reject H0.")
 
     fig_h1, ax_h1 = plt.subplots(figsize=(10, 6))
     plot_h1 = filtered_df[
@@ -279,15 +317,16 @@ elif page_selection == "Hypothesis 1":
     ax_h1.set_xlabel("Role")
     st.pyplot(fig_h1)
 
-    st.markdown("""
-    The data proved the opposite of the initial hypothesis. **Refusing to use AI tools provides a statistically significant salary premium** for both Individual Contributors and People Managers. This might indicate that in 2025, non-adopters represent highly tenured senior developers or professionals working in highly regulated, lucrative industries (like finance or defense) where AI is restricted. AI usage currently correlates with lower-paying or junior-heavy environments.
-    """)
+    st.markdown(
+        """The data proved the opposite of the initial hypothesis. **Refusing to use AI tools provides a statistically significant salary premium** for both Individual Contributors and People Managers. """
+    )
 
 elif page_selection == "Hypothesis 2":
-    st.markdown("""
-    ### Hypothesis 2
-    I hypothesize that for developers with a standard foundational background (<= 8 years of hobby coding), daily AI usage is associated with lower salaries. However, for "hardcore" hobbyists (> 8 years of non-professional coding), AI acts as an "accelerator," providing a statistically significant salary increase over those who refuse to use AI.
-    """)
+    st.markdown("""## Hypothesis 2
+
+* **Observation:** Observation 2 shows a visual "flip" (interaction effect): daily AI usage correlates with lower pay for standard hobbyists (<= 8 yrs), but correlates with higher pay for hardcore hobbyists (> 8 yrs).
+* **Null Hypothesis (H0):** Pre-professional hobby experience does not alter the salary impact of AI usage (i.e., AI users do not earn significantly more or less than non-users in either hobbyist tier).
+* **Test Chosen:** Mann-Whitney U test.""")
 
     ai_df = filtered_df[
         filtered_df["AISelect"].isin(
@@ -302,6 +341,38 @@ elif page_selection == "Hypothesis 2":
     non_std = std_hobby[std_hobby["AISelect"] == "No, and I don't plan to"][
         "ConvertedCompYearly"
     ].dropna()
+
+    st.write("Standard Hobbyists (<= 8 Years Hobby Coding)")
+    if len(ai_std) > 0 and len(non_std) > 0:
+        st.write(
+            f"Median Salary | Non-User: ${non_std.median():,.0f} vs AI Daily: ${ai_std.median():,.0f}"
+        )
+        stat_std, p_std = stats.mannwhitneyu(non_std, ai_std, alternative="greater")
+        st.write(f"p-value: {p_std:.4e}")
+        if p_std < 0.05:
+            st.write("Conclusion: Reject H0. Non-users earn more.")
+        else:
+            st.write("Conclusion: Fail to reject H0.")
+
+    hdc_hobby = ai_df[ai_df["YearsCodeHobby"] > 8]
+    ai_hard = hdc_hobby[hdc_hobby["AISelect"] == "Yes, I use AI tools daily"][
+        "ConvertedCompYearly"
+    ].dropna()
+    non_hard = hdc_hobby[hdc_hobby["AISelect"] == "No, and I don't plan to"][
+        "ConvertedCompYearly"
+    ].dropna()
+
+    st.write("Hardcore Hobbyists (> 8 Years Hobby Coding)")
+    if len(ai_hard) > 0 and len(non_hard) > 0:
+        st.write(
+            f"Median Salary | Non-User: ${non_hard.median():,.0f} vs AI Daily: ${ai_hard.median():,.0f}"
+        )
+        stat_hard, p_hard = stats.mannwhitneyu(ai_hard, non_hard, alternative="greater")
+        st.write(f"p-value: {p_hard:.4e}")
+        if p_hard < 0.05:
+            st.write("Conclusion: Reject H0. AI users earn more.")
+        else:
+            st.write("Conclusion: Fail to reject H0.")
 
     fig_h2, ax_h2 = plt.subplots(figsize=(9, 6))
     plot_h2 = ai_df.copy()
@@ -339,26 +410,21 @@ elif page_selection == "Hypothesis 2":
     ax_h2.grid(axis="y", linestyle="--", alpha=0.7)
     st.pyplot(fig_h2)
 
-    st.markdown("""
-    The data showed that:
-    - For developers with a standard background (<= 8 years of pre-professional hobby coding), daily AI usage is associated with significantly *lower* pay, suggesting it may act as a "crutch" for less experienced developers.
-    - However, for "hardcore" hobbyists (> 8 years), the trend reverses. Daily AI users earn much more than non-users.
-    The key takeway can be that AI tools act as an *accelerator* that boosts salary only if the developer already possesses deep, foundational coding knowledge. Without that deep foundation, AI usage correlates with lower compensation.
-    """)
+    st.markdown("""The data showed that:  
+- For developers with a standard background (<= 8 years of pre-professional hobby coding), daily AI usage is associated with significantly *lower* pay, suggesting it may act as a "crutch" for less experienced developers.
+- For hardcore hobbyists, the difference between earnings of daily ai users and non-users is not statistically significant. Although, it shows a strong trend that AI acts as an accelerator for senior devs, reversing the 'crutch' penalty seen in junior hobbyists.""")
 
 elif page_selection == "Discussion":
     st.markdown("""
-    ### Discussion
+## Discussion
 
-    **What I did and why:**
-    - Performed data cleanup by dropping missing values in critical columns, and applying the IQR method to remove extreme outliers in salary and tool counts. Verified cleanliness via dtype checks.
-    - Computed descriptive stats (mean, median, std) for 4+ numerical fields and created multiple plot types (histograms, boxplots, line plots, scatterplots) for initial exploration of distributions (revealing a heavy right-skew in compensation).
-    - Added 2 transformed columns: `YearsCodeHobby` (subtracting professional experience from total coding years) and `EdLevel_Numeric` (ordinal mapping of education levels) to enable categorical grouping and quantitative hypothesis testing.
-    - For detailed overview: used comparisons with hue, side-by-side subplot visualizations, and a Spearman correlation heatmap to reveal interactions (e.g., work vs. personal tool usage, correlation between experience and pay).
-    - Tested 2 hypotheses:
-      - **H1:** The "Non-Adopter" Premium by Role. Tested if refusing to use AI tools correlates with higher pay across different roles. **Result:** Statistically significant. Non-users currently earn a salary premium in both Individual Contributor and People Manager roles.
-      - **H2:** The "Crutch vs. Accelerator" Effect. Tested how daily AI usage interacts with pre-professional hobby coding. **Result:** Statistically significant. AI correlates with lower pay for standard hobbyists (<= 8 years) but acts as a positive salary multiplier for "hardcore" hobbyists (> 8 years), confirming the interaction effect.
-    - All plots were created using Matplotlib/Seaborn.
+**What I did and why:**
+- Performed data cleanup by dropping missing values in critical columns, and applying the IQR method to remove extreme outliers.
+- Computed descriptive stats (mean, median, std) for 4+ numerical fields and created multiple plot types (histograms, boxplots, line plots, scatterplots) for initial exploration of distributions.
+- Added 2 transformed columns: `YearsCodeHobby` (subtracting professional experience from total coding years) and `EdLevel_Numeric` (ordinal mapping of education levels) to enable categorical grouping and quantitative hypothesis testing.
+- For detailed overview: used comparisons with hue, side-by-side subplot visualizations, and a Spearman correlation heatmap to reveal interactions (e.g., work vs. personal tool usage, correlation between experience and pay).
+- Tested 2 hypotheses
+- All plots were created using Matplotlib/Seaborn.
     """)
     csv = filtered_df.to_csv(index=False).encode("utf-8")
     st.download_button(
@@ -407,7 +473,7 @@ elif page_selection == "API":
             }
             try:
                 res = requests.post(
-                    "https://svelkin-dsba-data-analysis-project-ziq7.onrender.com/api/data",
+                    "https://svelkin-dsba-data-analysis-project-ziq7.onrender.com/api/developers",
                     json=payload,
                 )
                 if res.status_code == 201:
