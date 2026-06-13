@@ -41,6 +41,8 @@ def load_and_clean_data():
         lambda x: x if x >= 0 else 0
     )
 
+    df_clean = df_clean[df_clean["YearsCodeHobby"] < 70]
+
     ed_mapping = {
         "Primary/elementary school": 1,
         "Secondary school (e.g. American high school, German Realschule or Gymnasium, etc.)": 2,
@@ -312,7 +314,9 @@ A common assumption is that AI makes developers more valuable.
 
     handles, labels = ax_h1.get_legend_handles_labels()
     ax_h1.legend(handles[:2], labels[:2], title="AI Usage")
-    ax_h1.set_title("The Non-Adopter Salary Difference by Role", fontsize=14)
+    ax_h1.set_title(
+        "Observation 1: The Non-Adopter Salary Difference by Role", fontsize=14
+    )
     ax_h1.set_ylabel("Salary (USD)")
     ax_h1.set_xlabel("Role")
     st.pyplot(fig_h1)
@@ -407,6 +411,9 @@ elif page_selection == "Hypothesis 2":
     ax_h2.set_xlabel("Hobby Coding Background")
     ax_h2.set_ylabel("Median Salary (USD)")
     ax_h2.legend(title="AI Usage")
+    ax_h2.set_title(
+        "Observation 2: The 'Crutch vs Accelerator' Interaction Effect", fontsize=14
+    )
     ax_h2.grid(axis="y", linestyle="--", alpha=0.7)
     st.pyplot(fig_h2)
 
