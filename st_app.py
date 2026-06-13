@@ -406,7 +406,10 @@ elif page_selection == "API":
                 "ICorPM": new_role,
             }
             try:
-                res = requests.post("http://127.0.0.1:8000/api/data", json=payload)
+                res = requests.post(
+                    "https://svelkin-dsba-data-analysis-project-ziq7.onrender.com/api/data",
+                    json=payload,
+                )
                 if res.status_code == 201:
                     st.success("Successfully added via API.")
                 else:
